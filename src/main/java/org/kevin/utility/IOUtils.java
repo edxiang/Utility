@@ -7,11 +7,25 @@ import java.io.*;
  */
 public class IOUtils {
 
+    public static final long SPLIT_SIZE = 100 * 1024 * 1024L; // 100M
+
     public static File getFile(String path) {
         File file = new File(path);
         if (file.exists())
             return file;
         return null;
+    }
+
+    public static File createFile(String path){
+        File file = new File(path);
+        if(!file.exists()){
+            try {
+                file.createNewFile();
+            } catch(Exception e){
+                e.printStackTrace();
+            }
+        }
+        return file;
     }
 
     public static byte[] getBytes(File file) {
