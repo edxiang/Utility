@@ -1,6 +1,7 @@
 package org.kevin.utility;
 
 import java.io.*;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Created by Kevin.Z on 2017/7/27.
@@ -16,12 +17,12 @@ public class IOUtils {
         return null;
     }
 
-    public static File createFile(String path){
+    public static File createFile(String path) {
         File file = new File(path);
-        if(!file.exists()){
+        if (!file.exists()) {
             try {
                 file.createNewFile();
-            } catch(Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -80,14 +81,14 @@ public class IOUtils {
         }
     }
 
-    public static boolean copyFile(File original, File target) {
+    public static boolean copyFile(File original, File target, CountDownLatch cdl) {
         InputStream is = null;
         OutputStream os = null;
         try {
-            is = new FileInputStream(original);
-            os = new FileOutputStream(target);
+            is = new BufferedInputStream(new FileInputStream(original));
+            os = new BufferedOutputStream(new FileOutputStream(target));
             int len = 0;
-            byte[] bytes = new byte[1024];
+            byte[] bytes = new byte[4 * 1024];
             while ((len = is.read(bytes)) != -1) {
                 os.write(bytes, 0, len);
             }
@@ -98,6 +99,7 @@ public class IOUtils {
             e.printStackTrace();
             return false;
         } finally {
+            cdl.countDown();
             if (is != null)
                 closeInputStream(is);
             if (os != null)
