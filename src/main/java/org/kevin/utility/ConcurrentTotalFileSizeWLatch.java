@@ -43,6 +43,7 @@ public class ConcurrentTotalFileSizeWLatch {
         if (pendingFileVisits.decrementAndGet() == 0)
             latch.countDown();
     }
+
     private long getTotalSizeOfFile(final String fileName)
             throws InterruptedException {
         service = Executors.newFixedThreadPool(100);
@@ -55,6 +56,7 @@ public class ConcurrentTotalFileSizeWLatch {
             service.shutdown();
         }
     }
+
     public static void main(final String[] args) throws InterruptedException {
         final long start = System.nanoTime();
         final long total = new ConcurrentTotalFileSizeWLatch()

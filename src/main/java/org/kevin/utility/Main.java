@@ -9,10 +9,9 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class Main {
     private ExecutorService executor = Executors.newFixedThreadPool(33);
-    private AtomicLong numberDirectory = new AtomicLong(0);
+    private AtomicLong numberDirectory = new AtomicLong(1);
     private AtomicLong totalSize = new AtomicLong(0);
     private CountDownLatch latch = new CountDownLatch(1);
-    //private static long sum = 0L;
 
 
     public static void main(String[] args) {
@@ -26,31 +25,8 @@ public class Main {
 //        new Main().oneByOneThread();
 //        new Main().oneByOne();
 
-        File dir = new File("F:\\QQ_file");
-        new Main().getDirSize(dir);
-        //System.out.println(sum);
     }
 
-
-
-    private void getDirSize(File dir) {
-        File[] files = dir.listFiles();
-        for (File f : files) {
-            if (f.isDirectory()) {
-                executor.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        getDirSize(f);
-                    }
-                });
-            } else {
-                System.out.println(f.getAbsolutePath() + " : " + f.length());
-                totalSize.addAndGet(f.length());
-                //sum += f.length();
-            }
-        }
-
-    }
 
     /**
      * 7.7G
@@ -74,7 +50,6 @@ public class Main {
         timer.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                //File f = new File("F:\\forVideo\\iso_temp.iso");
                 System.out.println("percentage:" + ((targetFile.length() / (7.7 * 1024 * 1024 * 1024)) * 100));
             }
         }, 10, 10, TimeUnit.SECONDS);
@@ -169,114 +144,6 @@ public class Main {
         }
     }
 
-    /**
-     * 4秒：20个文件（总大小为 977M ），单线程下载
-     * 1.468秒：使用 Buffer 的话
-     */
-    private void oneByOne() {
-        InputStream is = null;
-        OutputStream os = null;
-        long time = System.nanoTime();
-        try {
-            String dirPath = "F:\\videoForTest";
-            String targetPath = "D:\\threadTest\\";
-            File dir = IOUtils.getFile(dirPath);
-            File[] files = dir.listFiles();
-            for (File file : files) {
-                is = new BufferedInputStream(new FileInputStream(file));
-                File targetFile = IOUtils.createFile(targetPath + file.getName());
-                os = new BufferedOutputStream(new FileOutputStream(targetFile));
-                int length = -1;
-                byte[] bs = new byte[4 * 1024];
-                while ((length = is.read(bs)) != -1) {
-                    os.write(bs, 0, length);
-                }
-                os.flush();
-            }
-            System.out.println(System.nanoTime() - time);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (is != null)
-                    is.close();
-                if (os != null)
-                    os.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    /**
-     * 3 秒：20个文件（总大小为 977M ），开 20 个线程。
-     * 0.930秒：使用 Buffer 的话
-     */
-    private void oneByOneThread() {
-        try {
-            String dirPath = "F:\\videoForTest";
-            String targetPath = "D:\\threadTest\\";
-            File dir = IOUtils.getFile(dirPath);
-            long time = System.nanoTime();
-            if (dir != null && dir.isDirectory()) {
-                File[] files = dir.listFiles();
-                ExecutorService executor = Executors.newFixedThreadPool(files.length);
-                CountDownLatch cdl = new CountDownLatch(files.length);
-                for (File file : files) {
-                    String targetFilePath = targetPath + file.getName();
-                    Download d = new Download(file, targetFilePath, cdl);
-                    executor.submit(d);
-                }
-                executor.shutdown();
-                cdl.await();
-                System.out.println(System.nanoTime() - time);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    class Download implements Runnable {
-        File sourceFile;
-        String targetPath;
-        CountDownLatch cdl;
-
-        public Download(File sourceFile, String targetPath, CountDownLatch cdl) {
-            this.sourceFile = sourceFile;
-            this.targetPath = targetPath;
-            this.cdl = cdl;
-        }
-
-        @Override
-        public void run() {
-            InputStream is = null;
-            OutputStream os = null;
-            File targetFile = IOUtils.createFile(targetPath);
-            try {
-                is = new BufferedInputStream(new FileInputStream(sourceFile));
-                os = new BufferedOutputStream(new FileOutputStream(targetFile));
-
-                int length = -1;
-                byte[] bs = new byte[4 * 1024];
-                while ((length = is.read(bs)) != -1) {
-                    os.write(bs, 0, length);
-                }
-                os.flush();
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                cdl.countDown();
-                try {
-                    if (is != null)
-                        is.close();
-                    if (os != null)
-                        os.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
 
     class DownloadThread implements Runnable {
         File sourceFile;
